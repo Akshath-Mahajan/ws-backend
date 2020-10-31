@@ -3,7 +3,7 @@ from django.conf import settings
 from Products.models import Product
 class Cart(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    amount = models.IntegerField()
+    amount = models.IntegerField(default=0)
     products = models.ManyToManyField(Product, through="CartAndProduct")
 class Wishlist(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
