@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator 
 from django.conf import settings
+from django.db.models.signals import post_save, post_delete
 # Create your models here.
 class Collection(models.Model):
     name = models.CharField(max_length=256)
@@ -12,7 +13,6 @@ class Collection(models.Model):
 
 class Category(models.Model):
     name = models.CharField(max_length=256)
-    num_of_products = models.IntegerField(default=0)
     def __str__(self):
         return self.name
 class ProductSet(models.Model):
@@ -26,7 +26,6 @@ class Product(models.Model):
     image = models.ImageField(upload_to='Products/ProductImages')
     description = models.TextField(null=True, blank=True)
     discount = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
-    avg_rating = models.IntegerField(default=0)
     price = models.IntegerField()
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     collection = models.ForeignKey(Collection, on_delete=models.SET_NULL, default=None, null=True, blank=True)
