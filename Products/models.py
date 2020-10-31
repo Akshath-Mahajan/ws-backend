@@ -8,7 +8,7 @@ class Collection(models.Model):
     is_featured = models.BooleanField(default=False)
     date_created = models.DateTimeField(auto_now_add=True)
     def __str__(self):
-        return self.name+":"+description
+        return self.name+":"+self.description
 
 class Category(models.Model):
     name = models.CharField(max_length=256)
