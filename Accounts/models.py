@@ -18,9 +18,13 @@ class CartAndProduct(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.IntegerField()
+    def __str__(self):
+        return self.cart.user.username+":"+self.product.name
 class WishlistAndProduct(models.Model):
     wishlist = models.ForeignKey(Wishlist, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    def __str__(self):
+        return self.wishlist.user.username+":"+self.product.name
 
 '''
     Connect user creation with creation of cart and wishlist.

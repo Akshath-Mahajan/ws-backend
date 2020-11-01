@@ -6,6 +6,15 @@ from django.contrib import auth
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
 
+class WishlistSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Wishlist
+        fields = ['user', 'products'] 
+class CartSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cart
+        fields = ['user', 'products'] 
+
 class SignupSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
