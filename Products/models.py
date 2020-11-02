@@ -38,4 +38,4 @@ class Review(models.Model):
     rating = models.SmallIntegerField(null=True, blank=True)
     comment = models.TextField(null=True, blank=True)
     def __str__(self):
-        return self.user.username+":"+self.rating+":"+self.comment
+        return str(self.id)+" : "+self.user.username+" : "+str(self.rating)+":"+self.comment
