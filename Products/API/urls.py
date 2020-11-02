@@ -4,7 +4,9 @@ ProductDetail,
 ProductListQuery, ProductListCategory,
 AddToCart, AddToWishlist, 
 DeleteFromCart, DeleteFromWishlist,
-ReviewList, CreateReview, UpdateReview, DeleteReview)
+ReviewList, CreateReview, UpdateReview, DeleteReview,
+FeaturedCollectionName, FeaturedCollectionProducts,
+TrendingProducts)
 urlpatterns = [
     path('category-list/', CategoryListView.as_view()),
     path('product-detail/<int:pk>', ProductDetail.as_view()),
@@ -18,5 +20,8 @@ urlpatterns = [
     path('create-review/<int:pk>', CreateReview.as_view()),    
     path('update-review/<int:pk>', UpdateReview.as_view()),
     path('delete-review/<int:pk>', DeleteReview.as_view()), 
+    path('collection-products/', FeaturedCollectionProducts.as_view()), 
+    path('collection-name/', FeaturedCollectionName.as_view()), 
+    path('trending-products/', TrendingProducts.as_view()), 
 ]
 

@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from .serializers import CategorySerializer, ProductSerializer, ReviewSerializer
-from ..models import Category, Product, Review
+from ..models import Category, Product, Review, Collection
 from rest_framework.response import Response
 from Accounts.models import Cart, CartAndProduct, Wishlist, WishlistAndProduct
 from django.contrib.auth.models import User
@@ -132,3 +132,32 @@ class DeleteReview(APIView):
             review=review[0]
             review.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class FeaturedCollectionProducts(APIView):
+    permission_classes = [AllowAny]
+    def get(self, request):
+        collection = Collection.objects.filter(is_featured = True)
+        if collection.exists():
+            if len(collection) > 1:
+                return Response({'Error':['More than 1 featured collection present']})
+            collection = collection[0]
+            serializer = ProductSerializer(collection.products.all(), many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+class FeaturedCollectionName(APIView):
+    permission_classes = [AllowAny]
+    def get(self, request):
+        collection = Collection.objects.filter(is_featured = True)
+        if collection.exists():
+            if len(collection) > 1:
+                return Response({'Error':['More than 1 featured collection present']})
+            collection = collection[0]
+            return Response({'Name':collection.name}, status=status.HTTP_200_OK)
+
+class TrendingProducts(APIView):
+    permission_classes = [AllowAny]
+    def get(self, request):
+        products = Product.objects.all().order_by('-avg_rating')[:30]
+        serializer = ProductSerializer(products, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
