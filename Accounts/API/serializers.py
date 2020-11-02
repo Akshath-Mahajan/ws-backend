@@ -5,20 +5,23 @@ from django.conf import settings
 from django.contrib import auth
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
-
+from Products.API.serializers import ProductSerializer
 class WishlistSerializer(serializers.ModelSerializer):
+    products = ProductSerializer(read_only = True, many=True)
     class Meta:
         model = Wishlist
-        fields = ['user', 'products'] 
-class CartSerializer(serializers.ModelSerializer):
+        fields = ['id', 'user', 'products'] 
+
+class CartAndProductSerializer(serializers.ModelSerializer):
+    product = ProductSerializer(read_only=True)
     class Meta:
-        model = Cart
-        fields = ['user', 'products'] 
+        model = CartAndProduct
+        fields = ['id', 'cart', 'product', 'quantity']
 
 class SignupSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'password', 'first_name', 'last_name', 'email']
+        fields = ['id', 'username', 'password', 'first_name', 'last_name', 'email']
     def save_user(self, validated_data):
         user = User.objects.create_user(username=validated_data.get('username'), 
                                 password=validated_data.get('password'), 

@@ -3,8 +3,8 @@ from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import SignupSerializer, CartSerializer, WishlistSerializer
-from ..models import Cart, Wishlist
+from .serializers import SignupSerializer, WishlistSerializer, CartAndProductSerializer
+from ..models import Cart, Wishlist, CartAndProduct
 
 class WishlistView(APIView):
     def get(self, request, format=None):
@@ -17,9 +17,10 @@ class CartView(APIView):
     def get(self, request, format=None):
         cart = Cart.objects.get(user=request.user)
         if cart:
-            serializer = CartSerializer(cart)
-            return JsonResponse(serializer.data, status=status.HTTP_200_OK)
-        return JsonResponse({'Cart':['Cart not found']}, status=status.HTTP_400_BAD_REQUEST)
+            cart_products = CartAndProduct.objects.filter(cart=cart)
+            serializer = CartAndProductSerializer(cart_products, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response({'Cart':['Cart not found']}, status=status.HTTP_400_BAD_REQUEST)
 class SignupView(APIView):
     permission_classes = [AllowAny]
     def post(self, request, format=None):
