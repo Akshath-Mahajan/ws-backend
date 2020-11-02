@@ -1,7 +1,7 @@
 from django.http import HttpResponse, JsonResponse, Http404
 from rest_framework.views import APIView
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly
 from .serializers import CategorySerializer, ProductSerializer, ReviewSerializer
 from ..models import Category, Product, Review, Collection
 from rest_framework.response import Response
@@ -47,101 +47,35 @@ class ProductListCategory(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response({'Error':['No such products found']}, status=status.HTTP_400_BAD_REQUEST)
 
-'''
-Added as post method in Cart
-'''
-# class AddToCart(APIView):
-#     def post(self, request, pk, format=None):
-#         product, cart  = Product.objects.get(pk=pk), request.user.cart
-#         if request.data['quantity'] <= 0:
-#             return Response({'Error':["You can't do that"]}, status=status.HTTP_400_BAD_REQUEST)
-#         if product:
-#             if CartAndProduct.objects.filter(cart=cart, product=product).exists():
-#                 rel = CartAndProduct.objects.get(cart=cart, product=product)
-#                 rel.quantity = request.data['quantity']
-#                 rel.save()
-#             else:
-#                 rel = CartAndProduct(cart=cart, product=product, quantity=request.data['quantity'])
-#                 rel.save()
-#             serializer = ProductSerializer(product)
-#             data = serializer.data
-#             data['quantity'] = request.data['quantity']
-#             return Response(data, status=status.HTTP_200_OK)
-#         return Response({'Error':['No such products found']}, status=status.HTTP_400_BAD_REQUEST)
-'''
-Added as post method in Wihlist
-'''
-# class AddToWishlist(APIView):
-#     def post(self, request, pk, format=None):
-#         product, wishlist  = Product.objects.get(pk=pk), request.user.wishlist
-#         if product:
-#             if not WishlistAndProduct.objects.filter(wishlist=wishlist, product=product).exists():
-#                 rel = WishlistAndProduct(wishlist=wishlist, product=product)
-#                 rel.save()
-#             serializer = ProductSerializer(product)
-#             return Response(serializer.data, status=status.HTTP_200_OK)
-#         return Response({'Error':['No such products found']}, status=status.HTTP_400_BAD_REQUEST)
-
-'''
-Added as del method in Cart
-'''
-# class DeleteFromCart(APIView):
-#     def delete(self, request, pk, format=None):
-#         product, cart  = Product.objects.get(pk=pk), request.user.cart
-#         if product:
-#             rel = CartAndProduct.objects.get(cart=cart, product=product)
-#             if rel:
-#                 rel.delete()
-#         return Response(status=status.HTTP_204_NO_CONTENT)
-'''
-Added as del method in Wishlist
-'''
-# class DeleteFromWishlist(APIView):
-#     def delete(self, request, pk, format=None):
-#         product, wishlist  = Product.objects.get(pk=pk), request.user.wishlist
-#         if product:
-#             rel = WishlistAndProduct.objects.get(wishlist=wishlist, product=product)
-#             if rel:
-#                 rel.delete()
-#         return Response(status=status.HTTP_204_NO_CONTENT)
-
-class ReviewList(APIView):
-    permission_classes = [AllowAny]
-    def get(self, request, pk):
+class ReviewCRUD(APIView):
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    def get(self, request, pk): #Pk is product id
         reviews = Review.objects.filter(product__id = pk)
         serializer = ReviewSerializer(reviews, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
-class CreateReview(APIView):
-    def post(self, request, pk):
-        product = Product.objects.get(pk=pk)
-        if product:
-            if Review.objects.filter(user=request.user, product=product).exists():
-                return Response({'Error':['Did you mean to edit your review?']}, status=status.HTTP_400_BAD_REQUEST)
+    def post(self, request, pk): #Pk is product id
+        product = Product.objects.filter(pk=pk)
+        if product.exists():
+            product = product[0]
+            review = Review.objects.filter(user=request.user, product=product)
+            if review.exists():
+                review = review[0]
+                review.comment = request.data['comment']
+                review.rating = request.data['rating']
+                review.save()
             else:
-                r = Review(user=request.user, product=product, comment=request.data['comment'], rating=request.data['rating'])
-                r.save()
-                serializer = ReviewSerializer(r)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response({'Error':['No such products found']}, status=status.HTTP_400_BAD_REQUEST)
-class UpdateReview(APIView):
-    def put(self, request, pk):
-        review = Review.objects.filter(pk=pk, user=request.user)
-        if review.exists():
-            review = review[0]
-            review.comment = request.data['comment']
-            review.rating = request.data['rating']
-            review.save()
+                review = Review(user=request.user, product=product, comment=request.data['comment'], rating=request.data['rating'])
+                review.save()
             serializer = ReviewSerializer(review)
-            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-        return Response({'Error':['No such review found']}, status=status.HTTP_400_BAD_REQUEST)
-class DeleteReview(APIView):
-    def delete(self, request, pk):
-        review = Review.objects.filter(pk=pk, user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response({'Error':['No such products found']}, status=status.HTTP_400_BAD_REQUEST)
+    def delete(self, request, pk):  #Pk is product id
+        review = Review.objects.filter(product__id=pk, user=request.user)
         if review.exists():
             review=review[0]
             review.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response({"Succes":['Delete successful']}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"Error":['Product not found']}, status=status.HTTP_204_NO_CONTENT)
 
 class FeaturedCollectionProducts(APIView):
     permission_classes = [AllowAny]
