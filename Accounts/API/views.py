@@ -4,8 +4,9 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import SignupSerializer, WishlistSerializer, CartAndProductSerializer
-from ..models import Cart, Wishlist, CartAndProduct
-
+from ..models import Cart, Wishlist, CartAndProduct, WishlistAndProduct
+from Products.API.serializers import ProductSerializer
+from Products.models import Product
 class WishlistView(APIView):
     def get(self, request, format=None):
         wishlist = Wishlist.objects.get(user=request.user)
@@ -13,6 +14,28 @@ class WishlistView(APIView):
             serializer = WishlistSerializer(wishlist)
             return JsonResponse(serializer.data, status=status.HTTP_200_OK)
         return JsonResponse({'Wishlist':['Wishlist not found']}, status=status.HTTP_400_BAD_REQUEST)
+    def post(self, request,format=None):
+        pk = request.data['product_id']
+        product, wishlist = Product.objects.filter(pk=pk), request.user.wishlist
+        if product.exists():
+            product = product[0]
+            if not WishlistAndProduct.objects.filter(wishlist=wishlist, product=product).exists():
+                rel = WishlistAndProduct(wishlist=wishlist, product=product)
+                rel.save()
+            serializer = ProductSerializer(product)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response({'Error':['No such products found']}, status=status.HTTP_400_BAD_REQUEST)
+    def delete(self, request, format=None):
+        pk = request.data['product_id']
+        product, wishlist  = Product.objects.filter(pk=pk), request.user.wishlist
+        if product.exists():
+            product = product[0]
+            rel = WishlistAndProduct.objects.filter(wishlist=wishlist, product=product)
+            if rel.exists():
+                rel = rel[0]
+                rel.delete()
+                return Response({"Succes":['Delete successful']}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"Error":['Product not found']}, status=status.HTTP_204_NO_CONTENT)
 class CartView(APIView):
     def get(self, request, format=None):
         cart = Cart.objects.get(user=request.user)
@@ -21,6 +44,38 @@ class CartView(APIView):
             serializer = CartAndProductSerializer(cart_products, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response({'Cart':['Cart not found']}, status=status.HTTP_400_BAD_REQUEST)
+    def post(self, request, format=None):
+        if request.data['quantity'] <= 0:
+            return Response({'Error':["You can't do that"]}, status=status.HTTP_400_BAD_REQUEST)
+        pk = request.data['product_id']
+        product, cart  = Product.objects.filter(pk=pk), request.user.cart
+        if product.exists():
+            product=product[0]
+            rel = CartAndProduct.objects.filter(cart=cart, product=product)
+            if rel.exists():
+                rel = rel[0]
+                rel.quantity = request.data['quantity']
+                rel.save()
+            else:
+                rel = CartAndProduct(cart=cart, product=product, quantity=request.data['quantity'])
+                rel.save()
+            serializer = ProductSerializer(product)
+            data = serializer.data
+            data['quantity'] = request.data['quantity']
+            return Response(data, status=status.HTTP_200_OK)
+        return Response({'Error':['No such products found']}, status=status.HTTP_400_BAD_REQUEST)
+    def delete(self, request, format=None):
+        pk = request.data['product_id']
+        product, cart  = Product.objects.filter(pk=pk), request.user.cart
+        if product.exists():
+            product = product[0]
+            rel = CartAndProduct.objects.filter(cart=cart, product=product)
+            if rel.exists():
+                rel = rel[0]
+                rel.delete()
+                return Response({"Succes":['Delete successful']}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"Error":['Product not found']}, status=status.HTTP_204_NO_CONTENT)
+
 class SignupView(APIView):
     permission_classes = [AllowAny]
     def post(self, request, format=None):

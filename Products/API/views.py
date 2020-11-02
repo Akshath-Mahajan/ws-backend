@@ -47,53 +47,63 @@ class ProductListCategory(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response({'Error':['No such products found']}, status=status.HTTP_400_BAD_REQUEST)
 
-class AddToCart(APIView):
-    def post(self, request, pk, format=None):
-        product, cart  = Product.objects.get(pk=pk), request.user.cart
-        if request.data['quantity'] <= 0:
-            return Response({'Error':["You can't do that"]}, status=status.HTTP_400_BAD_REQUEST)
-        if product:
-            if CartAndProduct.objects.filter(cart=cart, product=product).exists():
-                rel = CartAndProduct.objects.get(cart=cart, product=product)
-                rel.quantity = request.data['quantity']
-                rel.save()
-            else:
-                rel = CartAndProduct(cart=cart, product=product, quantity=request.data['quantity'])
-                rel.save()
-            serializer = ProductSerializer(product)
-            data = serializer.data
-            data['quantity'] = request.data['quantity']
-            return Response(data, status=status.HTTP_200_OK)
-        return Response({'Error':['No such products found']}, status=status.HTTP_400_BAD_REQUEST)
+'''
+Added as post method in Cart
+'''
+# class AddToCart(APIView):
+#     def post(self, request, pk, format=None):
+#         product, cart  = Product.objects.get(pk=pk), request.user.cart
+#         if request.data['quantity'] <= 0:
+#             return Response({'Error':["You can't do that"]}, status=status.HTTP_400_BAD_REQUEST)
+#         if product:
+#             if CartAndProduct.objects.filter(cart=cart, product=product).exists():
+#                 rel = CartAndProduct.objects.get(cart=cart, product=product)
+#                 rel.quantity = request.data['quantity']
+#                 rel.save()
+#             else:
+#                 rel = CartAndProduct(cart=cart, product=product, quantity=request.data['quantity'])
+#                 rel.save()
+#             serializer = ProductSerializer(product)
+#             data = serializer.data
+#             data['quantity'] = request.data['quantity']
+#             return Response(data, status=status.HTTP_200_OK)
+#         return Response({'Error':['No such products found']}, status=status.HTTP_400_BAD_REQUEST)
+'''
+Added as post method in Wihlist
+'''
+# class AddToWishlist(APIView):
+#     def post(self, request, pk, format=None):
+#         product, wishlist  = Product.objects.get(pk=pk), request.user.wishlist
+#         if product:
+#             if not WishlistAndProduct.objects.filter(wishlist=wishlist, product=product).exists():
+#                 rel = WishlistAndProduct(wishlist=wishlist, product=product)
+#                 rel.save()
+#             serializer = ProductSerializer(product)
+#             return Response(serializer.data, status=status.HTTP_200_OK)
+#         return Response({'Error':['No such products found']}, status=status.HTTP_400_BAD_REQUEST)
 
-class AddToWishlist(APIView):
-    def post(self, request, pk, format=None):
-        product, wishlist  = Product.objects.get(pk=pk), request.user.wishlist
-        if product:
-            if not WishlistAndProduct.objects.filter(wishlist=wishlist, product=product).exists():
-                rel = WishlistAndProduct(wishlist=wishlist, product=product)
-                rel.save()
-            serializer = ProductSerializer(product)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response({'Error':['No such products found']}, status=status.HTTP_400_BAD_REQUEST)
-
-class DeleteFromCart(APIView):
-    def delete(self, request, pk, format=None):
-        product, cart  = Product.objects.get(pk=pk), request.user.cart
-        if product:
-            rel = CartAndProduct.objects.get(cart=cart, product=product)
-            if rel:
-                rel.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-class DeleteFromWishlist(APIView):
-    def delete(self, request, pk, format=None):
-        product, wishlist  = Product.objects.get(pk=pk), request.user.wishlist
-        if product:
-            rel = WishlistAndProduct.objects.get(wishlist=wishlist, product=product)
-            if rel:
-                rel.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+'''
+Added as del method in Cart
+'''
+# class DeleteFromCart(APIView):
+#     def delete(self, request, pk, format=None):
+#         product, cart  = Product.objects.get(pk=pk), request.user.cart
+#         if product:
+#             rel = CartAndProduct.objects.get(cart=cart, product=product)
+#             if rel:
+#                 rel.delete()
+#         return Response(status=status.HTTP_204_NO_CONTENT)
+'''
+Added as del method in Wishlist
+'''
+# class DeleteFromWishlist(APIView):
+#     def delete(self, request, pk, format=None):
+#         product, wishlist  = Product.objects.get(pk=pk), request.user.wishlist
+#         if product:
+#             rel = WishlistAndProduct.objects.get(wishlist=wishlist, product=product)
+#             if rel:
+#                 rel.delete()
+#         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class ReviewList(APIView):
     permission_classes = [AllowAny]
