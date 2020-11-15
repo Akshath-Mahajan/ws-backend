@@ -29,7 +29,7 @@ class ProductDetail(APIView):
         serializer = ProductSerializer(product)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-class ProductListQuery(APIView):
+class ProductQuery(APIView):
     permission_classes = [AllowAny]
     def get(self, request, format=None):
         products = Product.objects.filter(name__icontains = request.GET['query'])
@@ -38,7 +38,7 @@ class ProductListQuery(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response({'Error':['No such products found']}, status=status.HTTP_400_BAD_REQUEST)
 
-class ProductListCategory(APIView):
+class ProductCategory(APIView):
     permission_classes = [AllowAny]
     def get(self, request, pk, format=None):
         products = Product.objects.filter(category__id = pk)

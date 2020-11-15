@@ -1,18 +1,19 @@
 from django.urls import path
 from .views import (CategoryListView, 
 ProductDetail, 
-ProductListQuery, ProductListCategory,
+ProductQuery, ProductCategory,
 ReviewCRUD,
 FeaturedCollectionName, FeaturedCollectionProducts,
 TrendingProducts)
 urlpatterns = [
-    path('category-list/', CategoryListView.as_view()),
-    path('product-detail/<int:pk>', ProductDetail.as_view()),
-    path('product-list-query/', ProductListQuery.as_view()),    #Request has text named 'query'
-    path('product-list-category/<int:pk>', ProductListCategory.as_view()),
+    path('products/', ProductQuery.as_view()),    #Request has text named 'query'
+    path('products/<int:pk>', ProductDetail.as_view()),
+    path('products/category/<int:pk>', ProductCategory.as_view()),
+    path('products/collection/', FeaturedCollectionProducts.as_view()),
     path('reviews/<int:pk>', ReviewCRUD.as_view()),
-    path('collection-products/', FeaturedCollectionProducts.as_view()), 
-    path('collection-name/', FeaturedCollectionName.as_view()), 
-    path('trending-products/', TrendingProducts.as_view()), 
+    path('collection-name/', FeaturedCollectionName.as_view()),         #Base EP .
+    path('trending-products/', TrendingProducts.as_view()),             #Base EP .
+    path('category-list/', CategoryListView.as_view()), #Base EP .
+    #Add Num of items in cart/wishlist to base ep
 ]
 

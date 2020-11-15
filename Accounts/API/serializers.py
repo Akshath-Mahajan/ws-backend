@@ -6,6 +6,20 @@ from django.contrib import auth
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
 from Products.API.serializers import ProductSerializer
+class UserSerializer(serializers.ModelSerializer):
+    numOfItemsInCart = serializers.SerializerMethodField()
+    def get_numOfItemsInCart(self, obj):
+        return CartAndProduct.objects.filter(cart__user=obj).count()  
+    numOfItemsInWishlist = serializers.SerializerMethodField()
+    def get_numOfItemsInWishlist(self, obj):
+        return WishlistAndProduct.objects.filter(wishlist__user=obj).count()
+    token = serializers.SerializerMethodField()
+    def get_token(self, obj):
+        return Token.objects.get(user=obj).key
+    class Meta:
+        model = User
+        fields = ['id', 'token', 'username', 'email', 'numOfItemsInCart', 'numOfItemsInWishlist']
+
 class WishlistSerializer(serializers.ModelSerializer):
     products = ProductSerializer(read_only = True, many=True)
     class Meta:

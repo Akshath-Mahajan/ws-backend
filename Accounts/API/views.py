@@ -3,10 +3,11 @@ from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import SignupSerializer, WishlistSerializer, CartAndProductSerializer
+from .serializers import SignupSerializer, WishlistSerializer, CartAndProductSerializer, UserSerializer
 from ..models import Cart, Wishlist, CartAndProduct, WishlistAndProduct
 from Products.API.serializers import ProductSerializer
 from Products.models import Product
+from django.contrib.auth import authenticate
 class WishlistView(APIView):
     def get(self, request, format=None):
         wishlist = Wishlist.objects.get(user=request.user)
@@ -59,10 +60,8 @@ class CartView(APIView):
             else:
                 rel = CartAndProduct(cart=cart, product=product, quantity=request.data['quantity'])
                 rel.save()
-            serializer = ProductSerializer(product)
-            data = serializer.data
-            data['quantity'] = request.data['quantity']
-            return Response(data, status=status.HTTP_200_OK)
+            serializer = CartAndProductSerializer(rel)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response({'Error':['No such products found']}, status=status.HTTP_400_BAD_REQUEST)
     def delete(self, request, format=None):
         pk = request.data['product_id']
@@ -72,9 +71,19 @@ class CartView(APIView):
             rel = CartAndProduct.objects.filter(cart=cart, product=product)
             if rel.exists():
                 rel = rel[0]
+                rel_id = rel.id
                 rel.delete()
-                return Response({"Succes":['Delete successful']}, status=status.HTTP_204_NO_CONTENT)
+                return Response({"id":rel_id}, status=status.HTTP_202_ACCEPTED)
         return Response({"Error":['Product not found']}, status=status.HTTP_204_NO_CONTENT)
+
+class LoginView(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request, format=None):
+        user = authenticate(username=request.data['username'], password=request.data['password'])
+        if user is not None:
+            serializer = UserSerializer(user)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response({"Error":["Invalid Credentials"]}, status=status.HTTP_400_BAD_REQUEST)
 
 class SignupView(APIView):
     permission_classes = [AllowAny]
