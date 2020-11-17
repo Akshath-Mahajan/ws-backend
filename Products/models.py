@@ -38,7 +38,7 @@ class Review(models.Model):
     rating = models.SmallIntegerField(null=True, blank=True)
     comment = models.TextField(null=True, blank=True)
     def __str__(self):
-        return "Product("+str(self.product.id)+"):"+str(self.id)+" "+self.user.username+" : "+str(self.rating)+":"+self.comment
+        return "Product("+str(self.product.id)+"):"+str(self.id)+" "+self.user.email+" : "+str(self.rating)+":"+self.comment
 
 class ProductAndCollection(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
