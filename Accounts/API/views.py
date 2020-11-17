@@ -79,7 +79,7 @@ class CartView(APIView):
 class LoginView(APIView):
     permission_classes = [AllowAny]
     def post(self, request, format=None):
-        user = authenticate(username=request.data['username'], password=request.data['password'])
+        user = authenticate(username=request.data['email'], password=request.data['password'])
         if user is not None:
             serializer = UserSerializer(user)
             return Response(serializer.data, status=status.HTTP_200_OK)

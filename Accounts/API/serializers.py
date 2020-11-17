@@ -4,7 +4,7 @@ from ..models import Cart, CartAndProduct, WishlistAndProduct, Wishlist
 from django.conf import settings
 from django.contrib import auth
 from rest_framework.authtoken.models import Token
-from django.contrib.auth.models import User
+from ..models import User
 from Products.API.serializers import ProductSerializer
 class UserSerializer(serializers.ModelSerializer):
     numOfItemsInCart = serializers.SerializerMethodField()
@@ -18,7 +18,7 @@ class UserSerializer(serializers.ModelSerializer):
         return Token.objects.get(user=obj).key
     class Meta:
         model = User
-        fields = ['id', 'token', 'username', 'email', 'numOfItemsInCart', 'numOfItemsInWishlist']
+        fields = ['id', 'token', 'email', 'numOfItemsInCart', 'numOfItemsInWishlist']
 
 class WishlistSerializer(serializers.ModelSerializer):
     products = ProductSerializer(read_only = True, many=True)
@@ -35,11 +35,10 @@ class CartAndProductSerializer(serializers.ModelSerializer):
 class SignupSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'password', 'first_name', 'last_name', 'email']
+        fields = ['id', 'password', 'full_name', 'email']
     def save_user(self, validated_data):
-        user = User.objects.create_user(username=validated_data.get('username'), 
+        user = User.objects.create_user( 
                                 password=validated_data.get('password'), 
-                                first_name=validated_data.get('first_name'), 
-                                last_name=validated_data.get('last_name'), 
+                                full_name=validated_data.get('full_name'),  
                                 email=validated_data.get('email'))
         user.save()
