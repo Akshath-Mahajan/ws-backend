@@ -34,8 +34,9 @@ class WishlistView(APIView):
             rel = WishlistAndProduct.objects.filter(wishlist=wishlist, product=product)
             if rel.exists():
                 rel = rel[0]
+                rel_id = rel.id
                 rel.delete()
-                return Response({"Succes":['Delete successful']}, status=status.HTTP_204_NO_CONTENT)
+                return Response({"id":rel_id}, status=status.HTTP_202_ACCEPTED)
         return Response({"Error":['Product not found']}, status=status.HTTP_204_NO_CONTENT)
 class CartView(APIView):
     def get(self, request, format=None):
@@ -83,7 +84,7 @@ class LoginView(APIView):
         if user is not None:
             serializer = UserSerializer(user)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response({"Error":["Invalid Credentials"]}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"token": None}, status=status.HTTP_200_OK)
 
 class SignupView(APIView):
     permission_classes = [AllowAny]
