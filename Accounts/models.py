@@ -28,8 +28,7 @@ class User(AbstractBaseUser):
     email = models.EmailField(max_length=255, unique=True, default="")
     full_name = models.CharField(max_length=255, blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
-    confirmed_email = models.BooleanField(default=False)
-    
+    confirmed_email = models.BooleanField(default=False) 
     active = models.BooleanField(default=True)
     staff = models.BooleanField(default=False)
     admin = models.BooleanField(default=False)
@@ -57,6 +56,24 @@ class User(AbstractBaseUser):
     @property
     def is_active(self):
         return self.active
+
+class Address(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    name = models.CharField(max_length=32, blank=True, null=True)
+    pincode = models.CharField(max_length=6, blank=False, null=False)
+    locality = models.CharField(max_length=64, blank=False, null=False)
+    details = models.TextField(blank=False, null=False)
+    city = models.CharField(max_length=64, blank=False, null=False)
+    landmark = models.CharField(max_length=128, blank=True, null=True)
+    address_type = models.BooleanField(default=None, null=True, blank=True) #0 - Home, 1 - work
+    def __str__(self):
+        return self.user.email+"'s address"
+class Profile(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    mobile_no = models.CharField(max_length=20, blank=True, null=True)
+    def __str__(self):
+        return self.user.email+"'s profile"
+
 class Cart(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     # amount = models.IntegerField(default=0)
@@ -87,6 +104,7 @@ def save_user(instance, created, **kwargs):
     if created:
         Cart(user=instance).save()
         Wishlist(user=instance).save()
+        Profile(user=instance, mobile_no="").save()
         Token.objects.create(user=instance)
 
 post_save.connect(save_user, sender=settings.AUTH_USER_MODEL)
