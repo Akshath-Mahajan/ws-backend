@@ -105,3 +105,9 @@ class TrendingProducts(APIView):
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
+class NewProducts(APIView):
+    permission_classes = [AllowAny]
+    def get(self, request):
+        products = Product.objects.all().order_by('-created')[:10]
+        serializer = ProductSerializer(products, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

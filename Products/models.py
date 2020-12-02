@@ -30,6 +30,7 @@ class Product(models.Model):
     price = models.IntegerField()
     avg_rating = models.FloatField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    created = models.DateTimeField(auto_now_add=True)
     def __str__(self):
         return self.name
 class Review(models.Model):
