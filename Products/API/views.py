@@ -2,8 +2,8 @@ from django.http import HttpResponse, JsonResponse, Http404
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly
-from .serializers import CategorySerializer, ProductSerializer, ReviewSerializer
-from ..models import Category, Product, Review, Collection
+from .serializers import CategorySerializer, ProductSerializer, ReviewSerializer, ProductImageSerializer
+from ..models import Category, Product, Review, Collection, ProductImage
 from rest_framework.response import Response
 from Accounts.models import Cart, CartAndProduct, Wishlist, WishlistAndProduct
 from django.contrib.auth.models import User
@@ -26,17 +26,31 @@ class ProductDetail(APIView):
             raise Http404
     def get(self, request, pk, format=None):
         product = self.get_object(pk=pk)
+        auth = request.headers.get('Authorization', None)
         serializer = ProductSerializer(product)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        reviews = Review.objects.filter(product=product)
+        pImages = ProductImage.objects.filter(product=product)
+        pImageSerializer = ProductImageSerializer(pImages, many=True)
+        if auth:
+            reviews = reviews.exclude(user=request.user)
+        reviews = reviews[:10]
+        r_ser = ReviewSerializer(reviews, many=True)
+        userReviewSerializer = None
+        resp = {'product': serializer.data, 'reviews': r_ser.data, 'user_review': userReviewSerializer, 'in_cart': False}
+        if auth:
+            user_review = Review.objects.filter(product=product, user=request.user).first()
+            userReviewSerializer = ReviewSerializer(user_review)
+            in_cart = CartAndProduct.objects.filter(cart__user=request.user, product=product).exists()
+            resp = {'product': serializer.data, 'images': pImageSerializer.data, 'reviews': r_ser.data, 'user_review': userReviewSerializer.data, 'in_cart': in_cart}
+        
+        return Response(resp, status=status.HTTP_200_OK)
 
 class ProductQuery(APIView):
     permission_classes = [AllowAny]
     def get(self, request, format=None):
         products = Product.objects.filter(name__icontains = request.GET['query'])
-        if products.exists():
-            serializer = ProductSerializer(products, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response({'Error':['No such products found']}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = ProductSerializer(products, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class ProductCategory(APIView):
     permission_classes = [AllowAny]

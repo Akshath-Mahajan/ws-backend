@@ -29,10 +29,14 @@ class Product(models.Model):
     discount = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
     price = models.IntegerField()
     avg_rating = models.FloatField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    num_reviews = models.IntegerField(default=0)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
     def __str__(self):
         return self.name
+class ProductImage(models.Model):
+    image = models.ImageField(upload_to='Products/ProductImages')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
 class Review(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -57,6 +61,7 @@ def review_save(instance, **kwargs):
         current_count = Review.objects.filter(product=product).count()
         new_rating = ((current_count*current_rating) + instance.rating)/(current_count+1)
         product.avg_rating = new_rating
+        product.num_reviews+=1
         product.save()
     if not created:
         old_review = qs[0]
@@ -66,7 +71,11 @@ def review_save(instance, **kwargs):
 def review_delete(instance, **kwargs):
     product = instance.product
     count = Review.objects.filter(product=product).count()
-    product.avg_rating = ((product.avg_rating*count) - instance.rating)/(count-1)
+    if(count-1 > 0):
+        product.avg_rating = ((product.avg_rating*count) - instance.rating)/(count-1)
+    else:
+        product.avg_rating = 0
+    product.num_reviews-=1
     product.save()
 pre_save.connect(review_save, sender=Review)
 pre_delete.connect(review_delete, sender=Review)

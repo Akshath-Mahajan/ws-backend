@@ -18,7 +18,7 @@ class UserSerializer(serializers.ModelSerializer):
         return Token.objects.get(user=obj).key
     class Meta:
         model = User
-        fields = ['id', 'token', 'email', 'numOfItemsInCart', 'numOfItemsInWishlist']
+        fields = ['id', 'token', 'email', 'full_name', 'numOfItemsInCart', 'numOfItemsInWishlist']
 
 class WishlistSerializer(serializers.ModelSerializer):
     products = ProductSerializer(read_only = True, many=True)
