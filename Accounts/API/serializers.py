@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from ..models import Cart, CartAndProduct, WishlistAndProduct, Wishlist
+from ..models import Cart, CartAndProduct, WishlistAndProduct, Wishlist, Address
 # from Products.API.serializers import ProductSerializer
 from django.conf import settings
 from django.contrib import auth
@@ -42,3 +42,8 @@ class SignupSerializer(serializers.ModelSerializer):
                                 full_name=validated_data.get('full_name'),  
                                 email=validated_data.get('email'))
         user.save()
+
+class AddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Address 
+        fields = ['id', 'name', 'pincode', 'locality', 'details', 'city', 'landmark', 'address_type']

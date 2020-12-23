@@ -67,7 +67,7 @@ class Address(models.Model):
     landmark = models.CharField(max_length=128, blank=True, null=True)
     address_type = models.BooleanField(default=None, null=True, blank=True) #0 - Home, 1 - work
     def __str__(self):
-        return self.user.email+"'s address"
+        return str(self.id)+self.user.email+"'s address"
 class Profile(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     mobile_no = models.CharField(max_length=20, blank=True, null=True)

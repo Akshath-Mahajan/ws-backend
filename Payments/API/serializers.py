@@ -3,7 +3,7 @@ from ..models import Order, OrderItem, Payment, RefundRequest
 from Products.API.serializers import ProductSerializer
 
 class OrderSerializer(serializers.ModelSerializer):
-    products = ProductSerializer(read_only = True, many=True)
+    # products = ProductSerializer(read_only = True, many=True)
     class Meta:
         model = Order
         fields = ['id', 'user', 'created_at', 'updated_at', 'delivered', 'address', 'total', 'payment_method', 'paid']
@@ -21,4 +21,4 @@ class PaymentSerializer(serializers.ModelSerializer):
 class RefundSerializer(serializers.ModelSerializer):
     class Meta:
         model=RefundRequest
-        fields=['id', 'granted', 'order_item', 'amount', 'created_at']
+        fields=['id', 'quantity', 'granted', 'order_item', 'amount', 'created_at']

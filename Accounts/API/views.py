@@ -3,8 +3,8 @@ from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import SignupSerializer, WishlistSerializer, CartAndProductSerializer, UserSerializer
-from ..models import Cart, Wishlist, CartAndProduct, WishlistAndProduct
+from .serializers import SignupSerializer, WishlistSerializer, CartAndProductSerializer, UserSerializer, AddressSerializer
+from ..models import Cart, Wishlist, CartAndProduct, WishlistAndProduct, Address
 from Products.API.serializers import ProductSerializer
 from Products.models import Product
 from django.contrib.auth import authenticate
@@ -94,3 +94,9 @@ class SignupView(APIView):
             serializer.save_user(serializer.data)
             return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
         return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class AddressCRUD(APIView):
+    def get(self, request):
+        addresses = Address.objects.filter(user=request.user)
+        A_serializer = AddressSerializer(addresses, many=True)
+        return Response(A_serializer.data, status.HTTP_200_OK)
