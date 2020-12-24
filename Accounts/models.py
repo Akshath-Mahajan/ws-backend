@@ -27,6 +27,7 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser):
     email = models.EmailField(max_length=255, unique=True, default="")
     full_name = models.CharField(max_length=255, blank=True, null=True)
+    mobile_no = models.CharField(max_length=10, blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
     confirmed_email = models.BooleanField(default=False) 
     active = models.BooleanField(default=True)
@@ -55,7 +56,7 @@ class User(AbstractBaseUser):
         return self.admin
     @property
     def is_active(self):
-        return self.active
+        return True
 
 class Address(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -68,11 +69,6 @@ class Address(models.Model):
     address_type = models.BooleanField(default=None, null=True, blank=True) #0 - Home, 1 - work
     def __str__(self):
         return str(self.id)+self.user.email+"'s address"
-class Profile(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    mobile_no = models.CharField(max_length=20, blank=True, null=True)
-    def __str__(self):
-        return self.user.email+"'s profile"
 
 class Cart(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -104,7 +100,6 @@ def save_user(instance, created, **kwargs):
     if created:
         Cart(user=instance).save()
         Wishlist(user=instance).save()
-        Profile(user=instance, mobile_no="").save()
-        Token.objects.create(user=instance)
+        Token.objects.create(user=instance)   
 
 post_save.connect(save_user, sender=settings.AUTH_USER_MODEL)

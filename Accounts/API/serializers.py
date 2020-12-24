@@ -18,7 +18,7 @@ class UserSerializer(serializers.ModelSerializer):
         return Token.objects.get(user=obj).key
     class Meta:
         model = User
-        fields = ['id', 'token', 'email', 'full_name', 'numOfItemsInCart', 'numOfItemsInWishlist']
+        fields = ['id', 'token', 'email', 'full_name', 'numOfItemsInCart', 'numOfItemsInWishlist', 'mobile_no']
 
 class WishlistSerializer(serializers.ModelSerializer):
     products = ProductSerializer(read_only = True, many=True)
@@ -35,12 +35,13 @@ class CartAndProductSerializer(serializers.ModelSerializer):
 class SignupSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'password', 'full_name', 'email']
+        fields = ['id', 'password', 'full_name', 'email', 'mobile_no']
     def save_user(self, validated_data):
         user = User.objects.create_user( 
                                 password=validated_data.get('password'), 
                                 full_name=validated_data.get('full_name'),  
-                                email=validated_data.get('email'))
+                                email=validated_data.get('email'),
+                                mobile_no = validated_data.get('mobile'))
         user.save()
 
 class AddressSerializer(serializers.ModelSerializer):

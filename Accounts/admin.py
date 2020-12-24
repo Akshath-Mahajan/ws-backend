@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Cart, Wishlist, CartAndProduct, WishlistAndProduct, User, Address, Profile
+from .models import Cart, Wishlist, CartAndProduct, WishlistAndProduct, User, Address
 from django import forms
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
@@ -8,7 +8,6 @@ admin.site.register(Cart)
 admin.site.register(Wishlist)
 admin.site.register(CartAndProduct)
 admin.site.register(WishlistAndProduct)
-admin.site.register(Profile)
 admin.site.register(Address)
 
 class UserAdminCreationForm(forms.ModelForm):
@@ -69,7 +68,7 @@ class UserAdmin(BaseUserAdmin):
     list_filter = ('admin',)
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
-        ('Personal info', {'fields': ('full_name', )}),
+        ('Personal info', {'fields': ('full_name', 'mobile_no')}),
         ('Permissions', {'fields': ('admin', 'staff')}),
     )
     # add_fieldsets is not a standard ModelAdmin attribute. UserAdmin

@@ -101,8 +101,12 @@ class PaymentCRUD(APIView):
             #Take money here
             serializer = PaymentSerializer(p)
             return Response(serializer.data, status.HTTP_200_OK)
+
 class UserRefunds(APIView):
-    pass
+    def get(self, request, format=None):
+        refunds = RefundRequest.objects.filter(order_item__order__user=request.user)
+        R_serializer = RefundSerializer(refunds, many=True)
+        return Response(R_serializer.data, status.HTTP_200_OK)
 class RefundRequestCRUD(APIView):
     def get(self, request, format=None):
         pk = request.data['pk']

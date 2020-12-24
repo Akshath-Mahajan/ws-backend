@@ -4,7 +4,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import SignupSerializer, WishlistSerializer, CartAndProductSerializer, UserSerializer, AddressSerializer
-from ..models import Cart, Wishlist, CartAndProduct, WishlistAndProduct, Address
+from ..models import User, Cart, Wishlist, CartAndProduct, WishlistAndProduct, Address
 from Products.API.serializers import ProductSerializer
 from Products.models import Product
 from django.contrib.auth import authenticate
@@ -92,9 +92,24 @@ class SignupView(APIView):
         serializer = SignupSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save_user(serializer.data)
-            return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
+            return JsonResponse({'status': 'created'}, status=status.HTTP_201_CREATED)
         return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class UserManagment(APIView):
+    def post(self, request):
+        u = request.user
+        full_name = request.data.get('full_name', None)
+        email = request.data.get('email')
+        mobile = request.data.get('mobile', None)
+        u.full_name = full_name
+        if u.email != email:
+            u.active = False
+        u.email = email
+        if mobile:
+            u.mobile_no = mobile
+        u.save()
+        u_ser = UserSerializer(u)
+        return Response(u_ser.data, status.HTTP_200_OK)
 class AddressCRUD(APIView):
     def get(self, request):
         addresses = Address.objects.filter(user=request.user)
