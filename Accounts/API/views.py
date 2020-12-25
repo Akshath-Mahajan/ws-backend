@@ -8,6 +8,7 @@ from ..models import User, Cart, Wishlist, CartAndProduct, WishlistAndProduct, A
 from Products.API.serializers import ProductSerializer
 from Products.models import Product
 from django.contrib.auth import authenticate
+from django.contrib.auth.hashers import check_password
 class WishlistView(APIView):
     def get(self, request, format=None):
         wishlist = Wishlist.objects.get(user=request.user)
@@ -90,28 +91,69 @@ class SignupView(APIView):
     permission_classes = [AllowAny]
     def post(self, request, format=None):
         serializer = SignupSerializer(data=request.data)
-        if serializer.is_valid():
+        if serializer.is_valid():   #Takes care of validation using params on model.
             serializer.save_user(serializer.data)
             return JsonResponse({'status': 'created'}, status=status.HTTP_201_CREATED)
         return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class UserManagment(APIView):
+class UpdateUser(APIView):
     def post(self, request):
+        # Need to validate
         u = request.user
-        full_name = request.data.get('full_name', None)
-        email = request.data.get('email')
-        mobile = request.data.get('mobile', None)
+        full_name = request.data.get('full_name', request.user.full_name)
+        email = request.data.get('email', request.user.email)
+        mobile = request.data.get('mobile', request.user.mobile_no)
         u.full_name = full_name
+        u.mobile_no = mobile
         if u.email != email:
             u.active = False
         u.email = email
-        if mobile:
-            u.mobile_no = mobile
         u.save()
         u_ser = UserSerializer(u)
         return Response(u_ser.data, status.HTTP_200_OK)
+class ResetPassword(APIView):
+    def post(self, request):
+        old_pw = request.data.get('old_pw')
+        new_pw1 = request.data.get('new_pw1')
+        new_pw2 = request.data.get('new_pw2')
+        if request.user.check_password(old_pw) and new_pw1 == new_pw2:
+            request.user.set_password(new_pw1)
+            request.user.save()
+            return Response({'status':True, 'message': 'Changed password'}, status.HTTP_200_OK)
+        return Response({'status': False, 'message': 'Could not password'}, status.HTTP_400_BAD_REQUEST)
 class AddressCRUD(APIView):
     def get(self, request):
         addresses = Address.objects.filter(user=request.user)
         A_serializer = AddressSerializer(addresses, many=True)
         return Response(A_serializer.data, status.HTTP_200_OK)
+    def post(self, request):
+        address_id = request.data.get('id', False)
+        if address_id:
+            a = Address.objects.get(id=address_id, user=request.user) #Edit existing
+            a.name = request.data.get('name', a.name)
+            a.pincode = request.data.get('pincode', a.pincode)
+            a.locality=request.data.get('locality', a.locality)
+            a.details=request.data.get('details', a.details)
+            a.city=request.data.get('city', a.city)
+            a.landmark=request.data.get('landmark', a.landmark)
+            a.address_type=request.data.get('address_type', a.address_type)
+        else:
+            #Create new
+            a = Address(
+                user=request.user,
+                name=request.data.get('name', ''),
+                pincode=request.data.get('pincode'),
+                locality=request.data.get('locality', ''),
+                details=request.data.get('details'),
+                city=request.data.get('city'),
+                landmark=request.data.get('landmark', ''),
+                address_type=request.data.get('address_type', False)
+            )
+        a.save()
+        A_serializer = AddressSerializer(a)
+        return Response(A_serializer.data, status.HTTP_200_OK)
+    def delete(self, request):
+        pk = request.data['pk']
+        a = Address.objects.filter(pk=pk, user=request.user)
+        a.delete()
+        return Response({'status': 'deleted'}, status.HTTP_200_OK)

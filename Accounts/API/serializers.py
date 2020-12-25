@@ -41,7 +41,7 @@ class SignupSerializer(serializers.ModelSerializer):
                                 password=validated_data.get('password'), 
                                 full_name=validated_data.get('full_name'),  
                                 email=validated_data.get('email'),
-                                mobile_no = validated_data.get('mobile'))
+                                mobile_no = validated_data.get('mobile_no'))
         user.save()
 
 class AddressSerializer(serializers.ModelSerializer):

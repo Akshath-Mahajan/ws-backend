@@ -4,7 +4,7 @@ from Products.models import Product
 from django.db.models.signals import post_save
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
-
+from django.core.validators import MinLengthValidator
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **kwargs):
         if not email:
@@ -27,7 +27,7 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser):
     email = models.EmailField(max_length=255, unique=True, default="")
     full_name = models.CharField(max_length=255, blank=True, null=True)
-    mobile_no = models.CharField(max_length=10, blank=True, null=True)
+    mobile_no = models.CharField(max_length=10, validators=[MinLengthValidator(10)], blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
     confirmed_email = models.BooleanField(default=False) 
     active = models.BooleanField(default=True)

@@ -17,11 +17,10 @@ class UserOrders(APIView):
         O_serializer = OrderSerializer(orders, many=True)
         return Response(O_serializer.data, status.HTTP_200_OK)
 class OrderCRUD(APIView):
-    def get(self, request, format=None):
+    def get(self, request, pk, format=None):
         '''
             Get detailed view of a particular order
         '''
-        pk = request.data['pk']
         order = Order.objects.get(id=pk, user=request.user)
         order_items = OrderItem.objects.filter(order=order)
         O_serializer = OrderSerializer(order)
