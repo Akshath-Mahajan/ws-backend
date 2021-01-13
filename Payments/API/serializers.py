@@ -11,7 +11,7 @@ class OrderSerializer(serializers.ModelSerializer):
 class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
-        fields = ['id', 'product', 'order', 'name', 'initial_price', 'discount', 'final_price', 'quantity']
+        fields = ['id', 'product', 'order', 'name', 'initial_price', 'discount', 'final_price', 'quantity', 'refund_requested']
 
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:

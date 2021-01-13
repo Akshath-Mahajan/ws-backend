@@ -3,8 +3,8 @@ from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import SignupSerializer, WishlistSerializer, CartAndProductSerializer, UserSerializer, AddressSerializer
-from ..models import User, Cart, Wishlist, CartAndProduct, WishlistAndProduct, Address
+from .serializers import SignupSerializer, WishlistSerializer, CartAndProductSerializer, UserSerializer, AddressSerializer, WishlistAndProductSerializer
+from ..models import User, Cart, Wishlist, CartAndProduct, WishlistAndProduct, Address, ContactUs
 from Products.API.serializers import ProductSerializer
 from Products.models import Product
 from django.contrib.auth import authenticate
@@ -13,9 +13,10 @@ class WishlistView(APIView):
     def get(self, request, format=None):
         wishlist = Wishlist.objects.get(user=request.user)
         if wishlist:
-            serializer = WishlistSerializer(wishlist)
-            return JsonResponse(serializer.data, status=status.HTTP_200_OK)
-        return JsonResponse({'Wishlist':['Wishlist not found']}, status=status.HTTP_400_BAD_REQUEST)
+            wishlist_products = WishlistAndProduct.objects.filter(wishlist=wishlist)
+            serializer = WishlistAndProductSerializer(wishlist_products, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response({'Wishlist':['Wishlist not found']}, status=status.HTTP_400_BAD_REQUEST)
     def post(self, request,format=None):
         pk = request.data['product_id']
         product, wishlist = Product.objects.filter(pk=pk), request.user.wishlist
@@ -157,3 +158,14 @@ class AddressCRUD(APIView):
         a = Address.objects.filter(pk=pk, user=request.user)
         a.delete()
         return Response({'status': 'deleted'}, status.HTTP_200_OK)
+
+class ContactUsCRUD(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request):
+        ContactUs(
+            email = request.data['email'],
+            first_name = request.data['first_name'],
+            last_name = request.data['last_name'],
+            text = request.data['text']
+        ).save()
+        return Response({'Created': True}, status.HTTP_200_OK)

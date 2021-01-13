@@ -56,7 +56,7 @@ class User(AbstractBaseUser):
         return self.admin
     @property
     def is_active(self):
-        return True
+        return self.active
 
 class Address(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -103,3 +103,9 @@ def save_user(instance, created, **kwargs):
         Token.objects.create(user=instance)   
 
 post_save.connect(save_user, sender=settings.AUTH_USER_MODEL)
+
+class ContactUs(models.Model):
+    email = models.EmailField(max_length=255)
+    first_name = models.CharField(max_length=127)
+    last_name = models.CharField(max_length=127)
+    text = models.TextField()

@@ -30,19 +30,19 @@ class ProductDetail(APIView):
         serializer = ProductSerializer(product)
         reviews = Review.objects.filter(product=product)
         pImages = ProductImage.objects.filter(product=product)
-        print(pImages)
         pImageSerializer = ProductImageSerializer(pImages, many=True)
         if auth:
             reviews = reviews.exclude(user=request.user)
         reviews = reviews[:10]
         r_ser = ReviewSerializer(reviews, many=True)
         userReviewSerializer = None
-        resp = {'product': serializer.data, 'images': pImageSerializer.data,'reviews': r_ser.data, 'user_review': userReviewSerializer, 'in_cart': False}
+        resp = {'product': serializer.data, 'images': pImageSerializer.data,'reviews': r_ser.data, 'user_review': userReviewSerializer, 'in_cart': False, 'in_wishlist': False}
         if auth:
             user_review = Review.objects.filter(product=product, user=request.user).first()
             userReviewSerializer = ReviewSerializer(user_review)
             in_cart = CartAndProduct.objects.filter(cart__user=request.user, product=product).exists()
-            resp = {'product': serializer.data, 'images': pImageSerializer.data, 'reviews': r_ser.data, 'user_review': userReviewSerializer.data, 'in_cart': in_cart}
+            in_wishlist = WishlistAndProduct.objects.filter(wishlist__user = request.user, product=product).exists()
+            resp = {'product': serializer.data, 'images': pImageSerializer.data, 'reviews': r_ser.data, 'user_review': userReviewSerializer.data, 'in_cart': in_cart, 'in_wishlist': in_wishlist}
         
         return Response(resp, status=status.HTTP_200_OK)
 
@@ -119,10 +119,23 @@ class TrendingProducts(APIView):
         products = Product.objects.all().order_by('-avg_rating')[:30]
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+
+class Home(APIView):
+    permission_classes = [AllowAny]
+    def get(self, request):
+        new_products = Product.objects.all().order_by('-created')[:12]
+        trending_products = Product.objects.all().order_by('-avg_rating')[:12]
+        collection = Collection.objects.filter(is_featured = True)
+        if collection.exists():
+            collection = collection[0]
+        collection_products = collection.products.all()[:12]
+        new_serializer = ProductSerializer(new_products, many=True)
+        trending_serializer = ProductSerializer(trending_products, many=True)
+        collection_serializer = ProductSerializer(collection_products, many=True)
+        return Response({'trending':trending_serializer.data, 'new': new_serializer.data, 'collection': collection_serializer.data}, status=status.HTTP_200_OK)
 class NewProducts(APIView):
     permission_classes = [AllowAny]
     def get(self, request):
-        products = Product.objects.all().order_by('-created')[:10]
+        products = Product.objects.all().order_by('-created')[:50]
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

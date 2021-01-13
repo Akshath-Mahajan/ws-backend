@@ -25,6 +25,14 @@ class WishlistSerializer(serializers.ModelSerializer):
     class Meta:
         model = Wishlist
         fields = ['id', 'user', 'products'] 
+class WishlistAndProductSerializer(serializers.ModelSerializer):
+    product = ProductSerializer(read_only=True)
+    in_cart = serializers.SerializerMethodField()
+    def get_in_cart(self, obj):
+        return CartAndProduct.objects.filter(product=obj.product, cart__user=obj.wishlist.user).exists()  
+    class Meta:
+        model = WishlistAndProduct
+        fields = ['id', 'wishlist', 'product', 'in_cart']
 
 class CartAndProductSerializer(serializers.ModelSerializer):
     product = ProductSerializer(read_only=True)
