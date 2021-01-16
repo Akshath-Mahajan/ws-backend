@@ -9,13 +9,90 @@ from Accounts.models import CartAndProduct, Address, Cart
 from Products.models import Product
 from django.contrib.auth import authenticate
 import datetime
-
+import stripe
+from django.conf import settings
+from Accounts.models import User
+stripe.api_key = settings.STRIPE_SK
 
 class UserOrders(APIView):
     def get(self, request, format=None):
         orders = Order.objects.filter(user=request.user)
         O_serializer = OrderSerializer(orders, many=True)
         return Response(O_serializer.data, status.HTTP_200_OK)
+
+import json
+from django.http import HttpResponse
+
+# Using Django
+from django.views.decorators.csrf import csrf_exempt
+endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
+@csrf_exempt
+def stripe_webhook(request):
+    payload = request.body
+    sig_header = request.META['HTTP_STRIPE_SIGNATURE']
+    event = None
+
+    try:
+        event = stripe.Event.construct_from(json.loads(payload), sig_header, endpoint_secret)
+    except ValueError as e:
+        return HttpResponse(status=400)
+    except stripe.error.SignatureVerificationError as e:
+        return HttpResponse(status=400)
+    
+    if event.type=='checkout.session.completed':
+        # print(event.data.object)
+        if event.data.object.metadata.get('buy_now', None):
+            print('buy_now', event.data.object.metadata.buy_now)
+            print(event.data.object)
+            user = User.objects.get(email=event.data.object.customer_details.email)
+            o = Order(user=user, address=event.data.object.metadata.address, online_payment=True, paid=True)
+            o.save()
+            p = Product.objects.get(pk= event.data.object.metadata.product_id)
+            oi = OrderItem(order=o, product=p, 
+                initial_price = float(event.data.object.metadata.price), 
+                final_price=float(event.data.object.metadata.final_price),
+                quantity=int(event.data.object.metadata.quantity)
+            ).save()
+
+        else:
+            print(event.data.object)
+        #Generate payment and order here
+    else:
+        print('Unhandled event type {}'.format(event.type))
+
+    return HttpResponse(status=200)
+class OnlinePayment(APIView):
+    def post(self, request):
+        if request.data['buy_now']:
+            product = Product.objects.get(pk=request.data['product_id'])
+            address = Address.objects.get(pk=request.data['address_id'], user=request.user)
+            session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                customer_email=request.user.email,
+                line_items=[{
+                    'price_data': {
+                        'currency': 'inr',
+                        'product_data': {'name': product.name},
+                        'unit_amount': (100-product.discount) * product.price, #in paise.
+                    },
+                    'quantity': request.data['quantity'],
+                }],
+                mode='payment',
+                success_url=settings.FRONT_END_HOST+'/product/'+request.data['product_id'],
+                cancel_url=settings.FRONT_END_HOST+'/product/'+request.data['product_id'],
+                metadata={
+                    "buy_now": True,
+                    "product_id": request.data['product_id'],
+                    "quantity": request.data['quantity'],
+                    "discount": product.discount,
+                    "price": product.price,
+                    "final_price": ((100-product.discount) * product.price)/100, #in rupees
+                    "address": address.details+' \n '+address.locality+' \n '+address.landmark+' \n '+address.city+ ' \n '+address.pincode 
+                }
+            )
+            return Response({"sess_id":session.id})
+        else:
+            pass
 class OrderCRUD(APIView):
     def get(self, request, pk, format=None):
         '''
@@ -29,13 +106,23 @@ class OrderCRUD(APIView):
         return Response(data, status=status.HTTP_200_OK)
     def post(self, request,format=None):
         '''
-            Place new order
+            Request body:
+            address_id, online_payment=true or false, buy_now=true or false
+
+            Instead of signals to generate payment, we can also do if online_payment is true:
+            Payment(request.data['stripe_transaction_id'] , ... ).save()
+            in this method itself.
         '''
         address_id = request.data['address_id']
         address = Address.objects.get(pk=address_id, user=request.user)
-        order = Order(user=request.user, address=address, payment_method=request.data['payment_method'])
+        
+        order = Order(user=request.user, 
+        address=address.details+' \n '+address.locality+' \n '+address.landmark+' \n '+address.city+ ' \n '+address.pincode, 
+        online_payment=False)
         order.save()
-        if request.data['method'] == 'buy_now':
+        
+        #Deciding and creating the order_items related to this order:
+        if request.data.get('buy_now', None): #False implies buy_cart
             #request.data will contain product_id, size and quantity
             product = Product.objects.get(pk=request.data['product_id'])
             fp = (100-product.discount) * product.price/100
@@ -55,12 +142,15 @@ class OrderCRUD(APIView):
                     name=item.product.name, initial_price=item.product.price, 
                     discount=item.product.discount, final_price=fp, quantity=item.quantity).save()
             cps.delete()
+        
         order_items = OrderItem.objects.filter(order=order)
         OI_serial = OrderItemSerializer(order_items, many=True)
         O_serial = OrderSerializer(order)
+        
         data = {'order': O_serial.data, 'order_items': OI_serial.data}
         return Response(data, status=status.HTTP_200_OK)  
     def delete(self, request, format=None):
+        #Cancel before delivery
         pk = request.data['pk']
         order = Order.objects.get(pk=pk, user=request.user)
         threshold = datetime.date.today() - datetime.timedelta(days=1)
@@ -92,9 +182,9 @@ class PaymentCRUD(APIView):
     def post(self, request, format=None):
         #Create a payment
         order = Order.objects.get(pk = request.data['order_id'], user=request.user)
-        if order.payment_method == 1:
+        if order.online_payment:
         # Dont send post request to API unless 
-        # payment_method = 1, instead create payment obj manually
+        # online_payment = True, instead create payment obj manually
             p = Payment(order=order, amount=order.total, amt_paid = order.total, change=0)
             p.save()
             #Take money here

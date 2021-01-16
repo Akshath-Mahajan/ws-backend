@@ -139,3 +139,14 @@ REST_FRAMEWORK = {
 
 CORS_ORIGIN_ALLOW_ALL = True
 AUTH_USER_MODEL = 'Accounts.User'
+
+#Email:
+EMAIL_USE_TLS = True
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = "some93689@gmail.com"
+EMAIL_HOST_PASSWORD = "mnsekeqeatymxrwj"
+EMAIL_PORT = 587
+
+FRONT_END_HOST = "http://localhost:3000"
+STRIPE_SK = 'sk_test_51HoSBoEH2zpc9mRPTbHMbSsA5lkUaEKdmNbGgQK1d0oHzVOtDACUNyn1KqZ6y4vF2UDEIRB7fS0DXSIv1jgvn6JH00Yf6QJ7XG'
+STRIPE_WEBHOOK_SECRET = 'whsec_fpYKWcKuoRWk9YHnrla9Z1Ehvs5jvHZX'

@@ -10,9 +10,9 @@ class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     delivered = models.BooleanField(default=False)
-    address = models.ForeignKey(Address, null=True, on_delete=models.SET_NULL)
+    address = models.TextField(default="")
     total = models.IntegerField(default=0)
-    payment_method = models.BooleanField(default=False) #0 - COD, 1 - Online Pay
+    online_payment = models.BooleanField(default=False) #0 - COD, 1 - Online Pay
     paid = models.BooleanField(default=False)
 class OrderItem(models.Model):
     product = models.ForeignKey(Product, null=True, on_delete=models.SET_NULL)
@@ -42,6 +42,7 @@ class RefundRequest(models.Model): #Refund is given for individual items
 def save_order_item(instance, created, **kwargs):
     if created:
         order = instance.order
+        print(order)
         order.total += instance.final_price * instance.quantity
         order.save()
 def save_payment(instance, created, **kwargs):

@@ -93,7 +93,9 @@ class SignupView(APIView):
     def post(self, request, format=None):
         serializer = SignupSerializer(data=request.data)
         if serializer.is_valid():   #Takes care of validation using params on model.
-            serializer.save_user(serializer.data)
+            user = serializer.save_user(serializer.data)
+            token = Token.objects.get(user=user)
+            send_mail("Webshop: Confirm Email", "Please confirm your email by clicking the link below\n"+settings.FRONT_END_HOST+"/verify-user/user-id="+str(token.key), settings.EMAIL_HOST_USER, [user.email])
             return JsonResponse({'status': 'created'}, status=status.HTTP_201_CREATED)
         return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -169,3 +171,18 @@ class ContactUsCRUD(APIView):
             text = request.data['text']
         ).save()
         return Response({'Created': True}, status.HTTP_200_OK)
+
+class VerifyEmail(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request):
+        tok = Token.objects.filter(key=request.data['confirmation-id'])
+        if tok.exists():
+            tok = tok.first()
+            user = tok.user
+            user.active = True
+            user.save()
+            tok.delete()
+            Token.objects.create(user=user)
+        else:
+            return Response({'verified':False}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'verified':True}, status=status.HTTP_200_OK)
