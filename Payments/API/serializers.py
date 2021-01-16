@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from ..models import Order, OrderItem, Payment, RefundRequest
+from ..models import Order, OrderItem
 from Products.API.serializers import ProductSerializer
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -11,14 +11,14 @@ class OrderSerializer(serializers.ModelSerializer):
 class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
-        fields = ['id', 'product', 'order', 'name', 'initial_price', 'discount', 'final_price', 'quantity', 'refund_requested']
+        fields = ['id', 'product', 'order', 'name', 'initial_price', 'discount', 'final_price', 'quantity']
 
-class PaymentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model=Payment
-        fields=['id', 'order', 'amount', 'amt_paid', 'change', 'created_at'] 
+# class PaymentSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model=Payment
+#         fields=['id', 'order', 'amount', 'amt_paid', 'change', 'created_at'] 
 
-class RefundSerializer(serializers.ModelSerializer):
-    class Meta:
-        model=RefundRequest
-        fields=['id', 'quantity', 'granted', 'order_item', 'amount', 'created_at']
+# class RefundSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model=RefundRequest
+#         fields=['id', 'quantity', 'granted', 'order_item', 'amount', 'created_at']
