@@ -14,11 +14,14 @@ class Order(models.Model):
     total = models.IntegerField(default=0)
     online_payment = models.BooleanField(default=False) #0 - COD, 1 - Online Pay
     paid = models.BooleanField(default=False)
+class RP_Order(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    rp_order_id = models.CharField(max_length=100, blank=True, null=True)
+    # rp_payment_id = models.CharField(max_length=100, blank=True, null=True)
 class OrderItem(models.Model):
-    product = models.ForeignKey(Product, null=True, on_delete=models.SET_NULL)
     order = models.ForeignKey(Order, null=True, on_delete=models.CASCADE)
-    name = models.CharField(max_length=256)
-    initial_price = models.IntegerField()
+    name = models.CharField(max_length=256) #Product name
+    initial_price = models.IntegerField(blank=True, null=True)
     discount = models.IntegerField(default=0)
     final_price = models.IntegerField()
     quantity = models.IntegerField(default=1)
@@ -42,7 +45,6 @@ class OrderItem(models.Model):
 def save_order_item(instance, created, **kwargs):
     if created:
         order = instance.order
-        print(order)
         order.total += instance.final_price * instance.quantity
         order.save()
 # def save_payment(instance, created, **kwargs):

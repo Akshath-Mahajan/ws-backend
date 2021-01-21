@@ -25,7 +25,7 @@ SECRET_KEY = '8!9_5t!p5cw@of$a2^1n)c_7)8s$zch$0f2ulb_$(yrwj0!sl_'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['*'] #Remove for prod
 
 
 # Application definition
@@ -85,6 +85,7 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
+#Make db on cpanel and add mysql db here
 
 
 # Password validation
@@ -128,6 +129,8 @@ STATIC_URL = '/static/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 
+#Static url and media will change on hosting
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
                'rest_framework.authentication.TokenAuthentication',
@@ -148,5 +151,6 @@ EMAIL_HOST_PASSWORD = "mnsekeqeatymxrwj"
 EMAIL_PORT = 587
 
 FRONT_END_HOST = "http://localhost:3000"
-STRIPE_SK = 'sk_test_51HoSBoEH2zpc9mRPTbHMbSsA5lkUaEKdmNbGgQK1d0oHzVOtDACUNyn1KqZ6y4vF2UDEIRB7fS0DXSIv1jgvn6JH00Yf6QJ7XG'
-STRIPE_WEBHOOK_SECRET = 'whsec_fpYKWcKuoRWk9YHnrla9Z1Ehvs5jvHZX'
+
+RAZORPAY_PUBLIC_KEY = "rzp_test_gKZGVUDmysPjSX"
+RAZORPAY_SECRET_KEY = "5U8V7ISU8hU46WoymgmKkFnF"

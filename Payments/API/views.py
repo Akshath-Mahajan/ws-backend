@@ -2,97 +2,95 @@ from django.http import HttpResponse, JsonResponse, Http404
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from rest_framework.decorators import api_view
 from rest_framework import status
 from .serializers import OrderItemSerializer, OrderSerializer
-from ..models import Order, OrderItem
+from ..models import Order, OrderItem, RP_Order
 from Accounts.models import CartAndProduct, Address, Cart
 from Products.models import Product
 from django.contrib.auth import authenticate
 import datetime
-import stripe
 from django.conf import settings
 from Accounts.models import User
-stripe.api_key = settings.STRIPE_SK
+import razorpay
+import json
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
 
+@api_view(['POST'])
+@csrf_exempt
+def RP_Success(request):
+    if request.method == "POST":
+        a = request.data
+        data = {}
+        for key, val in a.items():
+            if key == 'razorpay_order_id':
+                data['razorpay_order_id'] = val
+                order_id = val
+            elif key == 'razorpay_payment_id':
+                data['razorpay_payment_id'] = val
+            elif key == 'razorpay_signature':
+                data['razorpay_signature'] = val
+        order = RP_Order.objects.filter(rp_order_id = order_id).first().order
+        client = razorpay.Client(auth=(settings.RAZORPAY_PUBLIC_KEY, settings.RAZORPAY_SECRET_KEY))
+        check = client.utility.verify_payment_signature(data)
+        if check:   #If check is not none then it's error.
+            return Response({'Error': 'Payment unsuccessful'}, status=status.HTTP_400_BAD_REQUEST)
+        order.paid = True
+        order.save()
+        return Response({'Success': "Payment complete"}, status=status.HTTP_200_OK)
 class UserOrders(APIView):
     def get(self, request, format=None):
         orders = Order.objects.filter(user=request.user)
         O_serializer = OrderSerializer(orders, many=True)
         return Response(O_serializer.data, status.HTTP_200_OK)
 
-import json
-from django.http import HttpResponse
 
-# Using Django
-from django.views.decorators.csrf import csrf_exempt
-endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
-@csrf_exempt
-def stripe_webhook(request):
-    payload = request.body
-    sig_header = request.META['HTTP_STRIPE_SIGNATURE']
-    event = None
-
-    try:
-        event = stripe.Event.construct_from(json.loads(payload), sig_header, endpoint_secret)
-    except ValueError as e:
-        return HttpResponse(status=400)
-    except stripe.error.SignatureVerificationError as e:
-        return HttpResponse(status=400)
-    
-    if event.type=='checkout.session.completed':
-        # print(event.data.object)
-        if event.data.object.metadata.get('buy_now', None):
-            print('buy_now', event.data.object.metadata.buy_now)
-            print(event.data.object)
-            user = User.objects.get(email=event.data.object.customer_details.email)
-            o = Order(user=user, address=event.data.object.metadata.address, online_payment=True, paid=True)
-            o.save()
-            p = Product.objects.get(pk= event.data.object.metadata.product_id)
-            oi = OrderItem(order=o, product=p, 
-                initial_price = float(event.data.object.metadata.price), 
-                final_price=float(event.data.object.metadata.final_price),
-                quantity=int(event.data.object.metadata.quantity)
-            ).save()
-
-        else:
-            print(event.data.object)
-        #Generate payment and order here
-    else:
-        print('Unhandled event type {}'.format(event.type))
-
-    return HttpResponse(status=200)
 class OnlinePayment(APIView):
     def post(self, request):
-        if request.data['buy_now']:
+        address = Address.objects.get(pk=request.data['address_id'], user=request.user)
+        client = razorpay.Client(auth=(settings.RAZORPAY_PUBLIC_KEY, settings.RAZORPAY_SECRET_KEY))
+        if request.data.get('buy_now', None):
             product = Product.objects.get(pk=request.data['product_id'])
-            address = Address.objects.get(pk=request.data['address_id'], user=request.user)
-            session = stripe.checkout.Session.create(
-                payment_method_types=['card'],
-                customer_email=request.user.email,
-                line_items=[{
-                    'price_data': {
-                        'currency': 'inr',
-                        'product_data': {'name': product.name},
-                        'unit_amount': (100-product.discount) * product.price, #in paise.
-                    },
-                    'quantity': request.data['quantity'],
-                }],
-                mode='payment',
-                success_url=settings.FRONT_END_HOST+'/product/'+request.data['product_id'],
-                cancel_url=settings.FRONT_END_HOST+'/product/'+request.data['product_id'],
-                metadata={
-                    "buy_now": True,
-                    "product_id": request.data['product_id'],
-                    "quantity": request.data['quantity'],
-                    "discount": product.discount,
-                    "price": product.price,
-                    "final_price": ((100-product.discount) * product.price)/100, #in rupees
-                    "address": address.details+' \n '+address.locality+' \n '+address.landmark+' \n '+address.city+ ' \n '+address.pincode 
-                }
-            )
-            return Response({"sess_id":session.id})
+            payment = client.order.create({
+                'amount': (100-product.discount) * product.price * request.data['quantity'], #In paise
+                'currency': 'INR', 'payment_capture': '1'
+                })
+            o = Order(user=request.user, 
+            address=address.details+'\n'+address.locality+'\n'+address.landmark+'\n'+address.city+ '\n'+address.pincode, 
+            online_payment=True, paid=False)
+            o.save()
+            OrderItem(order=o, name=product.name, 
+                                    discount = product.discount, 
+                                    initial_price = product.price, 
+                                    final_price = (100-product.discount) * product.price * 0.01, 
+                                    quantity = request.data['quantity']).save()
+            rp_o = RP_Order(order = o, rp_order_id=payment['id'])
+            rp_o.save()
+            return Response({'rzpay':payment}, status=status.HTTP_200_OK)
         else:
-            pass
+            cart = Cart.objects.get(user=request.user)
+            cps = CartAndProduct.objects.filter(cart=cart)
+            amt = 0 #In paise
+            o = Order(
+                user=request.user,
+                address=address.details+'\n'+address.locality+'\n'+address.landmark+'\n'+address.city+ '\n'+address.pincode, 
+                online_payment=True, paid=False
+            )
+            for cp in cps:
+                OrderItem(
+                    order = o, name=cp.product.name, discount=cp.product.discount, 
+                    initial_price = cp.product.price, final_price=(100-product.discount) * product.price * 0.01,
+                    quantity = cp.quantity).save()
+                amt+= (100 - cp.product.discount) * cp.product.price * cp.quantity
+            payment = client.order.create({
+                'amount': amt, #In paise
+                'currency': 'INR', 'payment_capture': '1'
+            })
+            rp_o = RP_Order(order = o, rp_order_id=payment['id'])
+            rp_o.save()
+            return Response({'rzpay':payment}, status=status.HTTP_200_OK)
+
 class OrderCRUD(APIView):
     def get(self, request, pk, format=None):
         '''
@@ -107,26 +105,28 @@ class OrderCRUD(APIView):
     def post(self, request,format=None):
         '''
             Request body:
-            address_id, online_payment=true or false, buy_now=true or false
+            address_id, online_payment= false, buy_now=true or false
 
-            Instead of signals to generate payment, we can also do if online_payment is true:
-            Payment(request.data['stripe_transaction_id'] , ... ).save()
-            in this method itself.
         '''
         address_id = request.data['address_id']
         address = Address.objects.get(pk=address_id, user=request.user)
         
         order = Order(user=request.user, 
-        address=address.details+' \n '+address.locality+' \n '+address.landmark+' \n '+address.city+ ' \n '+address.pincode, 
+        address=address.details+'\n'+address.locality+'\n'+address.landmark+'\n'+address.city+ '\n'+address.pincode, 
         online_payment=False)
         order.save()
         
         #Deciding and creating the order_items related to this order:
         if request.data.get('buy_now', None): #False implies buy_cart
             #request.data will contain product_id, size and quantity
-            product = Product.objects.get(pk=request.data['product_id'])
+            product = Product.objects.filter(pk=request.data['product_id'])
+            if not product.exists():
+                order.delete()
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+            else:
+                product = product[0]
             fp = (100-product.discount) * product.price/100
-            OrderItem(product=product, order=order, name=product.name, 
+            OrderItem(order=order, name=product.name, 
                                     discount = product.discount, 
                                     initial_price = product.price, 
                                     final_price = fp, 
@@ -135,20 +135,17 @@ class OrderCRUD(APIView):
             #request.user's cart
             cart = Cart.objects.get(user=request.user)
             cps = CartAndProduct.objects.filter(cart = cart)
-            if cps.exists():
-                for item in cps:
-                    fp = (100-item.product.discount) * item.product.price/100
-                    OrderItem(product=item.product, order=order, 
-                    name=item.product.name, initial_price=item.product.price, 
-                    discount=item.product.discount, final_price=fp, quantity=item.quantity).save()
+            if not cps.exists():
+                order.delete()
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+            for item in cps:
+                fp = (100-item.product.discount) * item.product.price/100
+                OrderItem(order=order, 
+                name=item.product.name, initial_price=item.product.price, 
+                discount=item.product.discount, final_price=fp, quantity=item.quantity).save()
             cps.delete()
-        
-        order_items = OrderItem.objects.filter(order=order)
-        OI_serial = OrderItemSerializer(order_items, many=True)
-        O_serial = OrderSerializer(order)
-        
-        data = {'order': O_serial.data, 'order_items': OI_serial.data}
-        return Response(data, status=status.HTTP_200_OK)  
+            
+        return Response(status=status.HTTP_200_OK)  
     def delete(self, request, format=None):
         #Cancel before delivery
         pk = request.data['pk']

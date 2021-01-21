@@ -33,7 +33,7 @@ class ProductDetail(APIView):
         pImageSerializer = ProductImageSerializer(pImages, many=True)
         if auth:
             reviews = reviews.exclude(user=request.user)
-        reviews = reviews[:10]
+        reviews = reviews[:4]
         r_ser = ReviewSerializer(reviews, many=True)
         userReviewSerializer = None
         resp = {'product': serializer.data, 'images': pImageSerializer.data,'reviews': r_ser.data, 'user_review': userReviewSerializer, 'in_cart': False, 'in_wishlist': False}
