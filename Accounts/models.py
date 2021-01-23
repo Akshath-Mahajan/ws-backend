@@ -5,6 +5,13 @@ from django.db.models.signals import post_save
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.core.validators import MinLengthValidator
+SIZE_CHOICES = (
+    ('XS', 'Extra Small'),
+    ('S', 'Small'),
+    ('M', 'Medium'),
+    ('L', 'Large'),
+    ('XL', 'Extra Large'),
+)
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **kwargs):
         if not email:
@@ -85,6 +92,7 @@ class CartAndProduct(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.IntegerField()
+    size = models.CharField(max_length=2, choices=SIZE_CHOICES, default='M')
     def __str__(self):
         return self.cart.user.email+":"+self.product.name
 class WishlistAndProduct(models.Model):

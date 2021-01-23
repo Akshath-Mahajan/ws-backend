@@ -64,7 +64,8 @@ class OnlinePayment(APIView):
                                     discount = product.discount, 
                                     initial_price = product.price, 
                                     final_price = (100-product.discount) * product.price * 0.01, 
-                                    quantity = request.data['quantity']).save()
+                                    quantity = request.data['quantity'],
+                                    size=request.data['size']).save()
             rp_o = RP_Order(order = o, rp_order_id=payment['id'])
             rp_o.save()
             return Response({'rzpay':payment}, status=status.HTTP_200_OK)
@@ -77,11 +78,13 @@ class OnlinePayment(APIView):
                 address=address.details+'\n'+address.locality+'\n'+address.landmark+'\n'+address.city+ '\n'+address.pincode, 
                 online_payment=True, paid=False
             )
+            o.save()
             for cp in cps:
                 OrderItem(
                     order = o, name=cp.product.name, discount=cp.product.discount, 
-                    initial_price = cp.product.price, final_price=(100-product.discount) * product.price * 0.01,
-                    quantity = cp.quantity).save()
+                    initial_price = cp.product.price, final_price=(100-cp.product.discount) * cp.product.price * 0.01,
+                    quantity = cp.quantity,
+                    size=cp.size).save()
                 amt+= (100 - cp.product.discount) * cp.product.price * cp.quantity
             payment = client.order.create({
                 'amount': amt, #In paise
@@ -106,6 +109,7 @@ class OrderCRUD(APIView):
         '''
             Request body:
             address_id, online_payment= false, buy_now=true or false
+            if buy_now, then size also
 
         '''
         address_id = request.data['address_id']
@@ -130,7 +134,8 @@ class OrderCRUD(APIView):
                                     discount = product.discount, 
                                     initial_price = product.price, 
                                     final_price = fp, 
-                                    quantity = request.data['quantity']).save()
+                                    quantity = request.data['quantity'],
+                                    size=request.data['size']).save()
         else:
             #request.user's cart
             cart = Cart.objects.get(user=request.user)
@@ -142,7 +147,8 @@ class OrderCRUD(APIView):
                 fp = (100-item.product.discount) * item.product.price/100
                 OrderItem(order=order, 
                 name=item.product.name, initial_price=item.product.price, 
-                discount=item.product.discount, final_price=fp, quantity=item.quantity).save()
+                discount=item.product.discount, final_price=fp, quantity=item.quantity,
+                size=item.size).save()
             cps.delete()
             
         return Response(status=status.HTTP_200_OK)  

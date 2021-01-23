@@ -59,9 +59,10 @@ class CartView(APIView):
             if rel.exists():
                 rel = rel[0]
                 rel.quantity = request.data['quantity']
+                rel.size = request.data['size']
                 rel.save()
             else:
-                rel = CartAndProduct(cart=cart, product=product, quantity=request.data['quantity'])
+                rel = CartAndProduct(cart=cart, product=product, quantity=request.data['quantity'], size=request.data['size'])
                 rel.save()
             serializer = CartAndProductSerializer(rel)
             return Response(serializer.data, status=status.HTTP_200_OK)

@@ -38,7 +38,7 @@ class CartAndProductSerializer(serializers.ModelSerializer):
     product = ProductSerializer(read_only=True)
     class Meta:
         model = CartAndProduct
-        fields = ['id', 'cart', 'product', 'quantity']
+        fields = ['id', 'cart', 'product', 'quantity', 'size']
 
 class SignupSerializer(serializers.ModelSerializer):
     class Meta:

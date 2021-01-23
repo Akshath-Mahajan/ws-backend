@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings 
-from Accounts.models import Address
+from Accounts.models import Address, SIZE_CHOICES
 from Products.models import Product
 from django.db.models.signals import post_save
 # Create your models here.
@@ -25,6 +25,7 @@ class OrderItem(models.Model):
     discount = models.IntegerField(default=0)
     final_price = models.IntegerField()
     quantity = models.IntegerField(default=1)
+    size = models.CharField(max_length=2, choices=SIZE_CHOICES, default='M')
     # refund_requested = models.BooleanField(default=False)
 
 # class Payment(models.Model): #Payment is done for whole orders, even if the whole order has only 1 item
