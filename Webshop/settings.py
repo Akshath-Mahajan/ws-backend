@@ -139,8 +139,12 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ]
 }
+#CORS
+CORS_ORIGIN_ALLOW_ALL = config('WS_DEBUG', cast=bool)
+CORS_ORIGIN_WHITELIST = [] #Enter domain
+CSRF_TRUSTED_ORIGINS = [] #May be unnecessary
 
-CORS_ORIGIN_ALLOW_ALL = True
+
 AUTH_USER_MODEL = 'Accounts.User'
 
 #Email:

@@ -41,7 +41,7 @@ def RP_Success(request):
         return Response({'Success': "Payment complete"}, status=status.HTTP_200_OK)
 class UserOrders(APIView):
     def get(self, request, format=None):
-        orders = Order.objects.filter(user=request.user)
+        orders = Order.objects.filter(user=request.user).exclude(online_payment=True, paid=False)
         O_serializer = OrderSerializer(orders, many=True)
         return Response(O_serializer.data, status.HTTP_200_OK)
 
