@@ -1,0 +1,16 @@
+asgiref==3.2.3
+certifi==2021.10.8
+charset-normalizer==2.0.10
+DateTime==4.3
+Django==3.0.4
+django-cors-headers==3.5.0
+djangorestframework==3.11.1
+idna==3.3
+Pillow==7.0.0
+python-decouple==3.3
+pytz==2021.3
+razorpay==1.2.0
+requests==2.27.1
+sqlparse==0.4.2
+urllib3==1.26.8
+zope.interface==5.4.0
